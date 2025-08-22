@@ -10,7 +10,7 @@
         body {
             font-family: 'Inter', sans-serif;
         }
-        /* Custom scrollbar for a softer look */
+        
         #chat-window::-webkit-scrollbar {
             width: 8px;
         }
@@ -59,11 +59,9 @@
         const sendBtn = document.getElementById('send-btn');
         const typingIndicator = document.getElementById('typing-indicator');
 
-        // Store the conversation history
+   
         let chatHistory = [];
 
-        // --- Safety Keyword Lists ---
-        // These lists contain keywords that trigger an immediate, pre-defined safety message.
         const SELF_HARM_KEYWORDS = [
             'kill myself', 'suicide', 'ending my life', 'want to die', 
             'self harm', 'self-harm', 'end it all', 'take my own life'
@@ -73,19 +71,16 @@
             'i am being abused', 'domestic violence', 'emergency'
         ];
 
-        // --- Initial Welcome Message ---
         function showWelcomeMessage() {
-            // A gentler, more welcoming introduction
             const welcomeMessage = "Hello, I'm Daisy. I'm here to listen whenever you're ready. There's no pressure at all, just a safe space to share what's on your mind.";
             appendMessage('daisy', welcomeMessage);
         }
 
-        // --- Core Functions ---
+   
 
-        // Appends a message to the chat window
         function appendMessage(sender, message) {
             const messageElement = document.createElement('div');
-            const formattedMessage = message.replace(/\n/g, '<br>'); // Preserve line breaks
+            const formattedMessage = message.replace(/\n/g, '<br>'); 
             
             if (sender === 'user') {
                 messageElement.className = 'flex justify-end mb-4';
@@ -94,7 +89,7 @@
                         <p class="text-sm">${formattedMessage}</p>
                     </div>
                 `;
-            } else { // Daisy's message
+            } else { 
                 messageElement.className = 'flex justify-start mb-4';
                 messageElement.innerHTML = `
                     <div class="bg-slate-200 text-slate-800 rounded-r-lg rounded-bl-lg p-3 max-w-xs md:max-w-md">
@@ -103,10 +98,10 @@
                 `;
             }
             chatWindow.appendChild(messageElement);
-            chatWindow.scrollTop = chatWindow.scrollHeight; // Auto-scroll to the bottom
+            chatWindow.scrollTop = chatWindow.scrollHeight; 
         }
 
-        // Handles sending a message
+        
         async function sendMessage() {
             const messageText = userInput.value.trim();
             if (!messageText) return;
@@ -114,23 +109,22 @@
             appendMessage('user', messageText);
             userInput.value = '';
 
-            // --- Safety Check ---
-            // Check the user's message against the keyword lists before calling the AI.
+           
             const lowerCaseMessage = messageText.toLowerCase();
             
             if (SELF_HARM_KEYWORDS.some(keyword => lowerCaseMessage.includes(keyword))) {
                 const safetyMessage = "It sounds like you are going through a difficult time. If you’re in crisis or need someone to talk to, please reach out to the 988 Suicide & Crisis Lifeline. You can call or text 988 anytime in the US and Canada. In the UK, you can call 111. Please reach out for help.";
                 appendMessage('daisy', safetyMessage);
-                return; // Stop further processing
+                return; 
             }
 
             if (DANGER_KEYWORDS.some(keyword => lowerCaseMessage.includes(keyword))) {
                 const safetyMessage = "If you are in immediate danger, please call 911 or your local emergency services right away. Your safety is the most important thing.";
                 appendMessage('daisy', safetyMessage);
-                return; // Stop further processing
+                return; 
             }
 
-            // If no safety keywords are found, proceed with the AI call
+            
             typingIndicator.classList.remove('hidden');
             
             try {
@@ -144,11 +138,11 @@
             }
         }
 
-        // --- Gemini API Integration ---
+    
 
-        // Fetches a response from the Gemini API
+        
         async function getAIResponse(prompt) {
-            // This prompt balances the warmth of a friend with the gentle guidance of a therapist.
+           
             const systemPrompt = `You are Daisy, an AI companion who balances the warmth of a supportive friend with the gentle guidance of a therapist. Your goal is to be an empathetic listener who helps the user explore their feelings and thoughts more deeply.
 - **Tone**: Maintain a warm, patient, and non-judgmental tone, like a trusted friend. Your responses should feel natural and caring.
 - **Validate and Empathize**: Always start by acknowledging and validating the user's feelings. Phrases like "That sounds really tough," or "I can see why you'd feel that way," are great.
@@ -156,14 +150,14 @@
 - **Supportive Guidance**: Gently help the user connect the dots in their own thoughts without being clinical or prescriptive. The aim is to empower them to find their own clarity.
 - **Keep it Human**: Your responses should be concise and conversational. You're a companion on their journey, not a detached expert.`;
 
-            // Add the system prompt and the user's new message to the history
+            
             chatHistory.push({ role: "user", parts: [{ text: systemPrompt + "\n\nUser: " + prompt }] });
 
             const payload = {
                 contents: chatHistory,
-                // Optional: Configuration for the model's output
+                
                 generationConfig: {
-                    temperature: 0.75, // Slightly increased for more natural, less deterministic responses
+                    temperature: 0.75, 
                     topP: 0.9,
                     topK: 40,
                 }
@@ -172,10 +166,10 @@
             const apiKey = "AIzaSyD6YcI54wuYiQDPUUU63HeGjjazUHtDr9M"; 
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
 
-            // Implemented exponential backoff for retries
+            
             let response;
-            let delay = 1000; // Start with 1 second
-            for (let i = 0; i < 5; i++) { // Retry up to 5 times
+            let delay = 1000; 
+            for (let i = 0; i < 5; i++) { 
                 try {
                     response = await fetch(apiUrl, {
                         method: 'POST',
@@ -189,19 +183,19 @@
                             result.candidates[0].content && result.candidates[0].content.parts &&
                             result.candidates[0].content.parts.length > 0) {
                             const aiText = result.candidates[0].content.parts[0].text;
-                            // Add AI's response to history for context in future turns
+                            
                             chatHistory.push({ role: "model", parts: [{ text: aiText }] });
                             return aiText;
                         }
-                    } else if (response.status === 429) { // Throttling
+                    } else if (response.status === 429) { 
                         await new Promise(resolve => setTimeout(resolve, delay));
-                        delay *= 2; // Double the delay for the next retry
+                        delay *= 2; 
                         continue;
                     }
-                    // Handle other non-ok responses
+                    
                     throw new Error(`API request failed with status ${response.status}`);
                 } catch (error) {
-                    if (i === 4) { // Last retry failed
+                    if (i === 4) { 
                         throw error;
                     }
                     await new Promise(resolve => setTimeout(resolve, delay));
@@ -209,12 +203,12 @@
                 }
             }
 
-            // If all retries fail, return a default error message.
+            
             return "I'm sorry, I couldn't process that. Could you try rephrasing?";
         }
 
 
-        // --- Event Listeners ---
+       
         sendBtn.addEventListener('click', sendMessage);
         userInput.addEventListener('keydown', (event) => {
             if (event.key === 'Enter') {
@@ -222,8 +216,7 @@
             }
         });
 
-        // --- Initialisation ---
-        // Show the welcome message when the app loads
+       
         window.onload = showWelcomeMessage;
 
     </script>
